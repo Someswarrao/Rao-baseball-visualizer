@@ -49,7 +49,7 @@ export default function BaseballPitchApp() {
     };
 
     try {
-      const res = await fetch("https://rao-baseball-visualizer.onrender.com", {
+      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

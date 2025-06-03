@@ -30,9 +30,10 @@ class PitchRequest(BaseModel):
 
 # Route
 @app.post("/simulate")
-def simulate_pitch(pitch: PitchRequest):
+async def simulate_pitch(pitch: PitchRequest):
     html_file, final_position = run_simulation(pitch.dict())
     return {
         "htmlFile": html_file,  # e.g., static/pitch_result.html
         "finalPosition": final_position
     }
+
