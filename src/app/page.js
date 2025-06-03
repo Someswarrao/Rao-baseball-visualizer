@@ -31,21 +31,49 @@ export default function BaseballPitchApp() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const { theta, phi } = pitchData;
+
     if (parseFloat(theta) < -90 || parseFloat(theta) > 90 || parseFloat(phi) < -90 || parseFloat(phi) > 90) {
       setAngleError("Angles must be between -90° and 90°");
       return;
     }
 
-    const releasePosition = `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`;
-    const submissionData = {
-      ...pitchData,
-      releasePosition, // merge x,y,z for backend if needed
+    const payload = {
+      handedness: pitchData.pitcher,
+      initialVelocity: pitchData.initialVelocity,
+      spinRate: pitchData.spinRate,
+      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
+      theta: pitchData.theta,
+      phi: pitchData.phi,
     };
 
-    console.log("Submitted pitch data:", submissionData);
-    // Here you would call the simulation backend or visualization engine
+    try {
+      const res = await fetch("http://127.0.0.1:8000/simulate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch from backend.");
+      }
+
+      const result = await res.json();
+      console.log("✅ Backend response:", result);
+
+      alert(
+        `✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}`
+      );
+
+      // Optionally open result HTML (hosted locally)
+      window.open(`http://127.0.0.1:8000/${result.htmlFile}`, "_blank");
+    } catch (err) {
+      console.error("❌ Backend error:", err);
+      alert("⚠️ Error calling the simulation backend. Check console.");
+    }
   };
 
   return (
