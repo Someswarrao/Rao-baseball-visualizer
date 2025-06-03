@@ -74,11 +74,15 @@ export default function BaseballPitchApp() {
       const result = await res.json();
       console.log("✅ Backend response:", result);
 
+      const fullUrl = `${BASE_URL}/${result.htmlFile}`;
       setResultData({
         finalY: result.finalPosition.y,
         finalZ: result.finalPosition.z,
-        fileUrl: `${BASE_URL}/${result.htmlFile}`,
+        fileUrl: fullUrl,
       });
+
+      // Open result in new tab
+      window.open(fullUrl, "_blank");
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠️ Error calling the simulation backend. Check console.");
@@ -95,7 +99,7 @@ export default function BaseballPitchApp() {
           <div className="space-y-2">
             <label>Pitcher</label>
             <Select value={pitchData.pitcher} onValueChange={(val) => handleChange("pitcher", val)}>
-              <SelectTrigger suppressHydrationWarning>{pitchData.pitcher}</SelectTrigger>
+              <SelectTrigger>{pitchData.pitcher}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="LHP">LHP</SelectItem>
                 <SelectItem value="RHP">RHP</SelectItem>
@@ -104,7 +108,7 @@ export default function BaseballPitchApp() {
 
             <label>Pitch Type</label>
             <Select value={pitchData.pitchType} onValueChange={(val) => handleChange("pitchType", val)}>
-              <SelectTrigger suppressHydrationWarning>{pitchData.pitchType}</SelectTrigger>
+              <SelectTrigger>{pitchData.pitchType}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="Fastball">Fastball</SelectItem>
                 <SelectItem value="Slider">Slider</SelectItem>
@@ -148,26 +152,16 @@ export default function BaseballPitchApp() {
             <Button onClick={handleSubmit} className="w-full mt-4">
               Submit
             </Button>
-          </div>
 
-          {resultData && (
-            <div className="mt-6 bg-green-100 p-4 rounded-lg text-sm">
-              <p className="font-medium text-green-800">✅ Pitch simulation complete!</p>
-              <p>📍 Final Y: {resultData.finalY.toFixed(2)}</p>
-              <p>📍 Final Z: {resultData.finalZ.toFixed(2)}</p>
-              <p>
-                🧾 View result:{" "}
-                <a
-                  href={resultData.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline"
-                >
-                  Open pitch_result.html
-                </a>
-              </p>
-            </div>
-          )}
+            {resultData && (
+              <div className="text-sm text-center mt-4 bg-green-50 p-2 rounded">
+                ✅ Simulation complete!<br />
+                📍 Final Y: {resultData.finalY.toFixed(2)}<br />
+                📍 Final Z: {resultData.finalZ.toFixed(2)}<br />
+                🔗 <a href={resultData.fileUrl} target="_blank" className="underline text-blue-600">Open 3D Plot</a>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
