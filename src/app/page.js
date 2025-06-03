@@ -14,9 +14,9 @@ export default function BaseballPitchApp() {
     releaseY: "1.83",
     releaseZ: "0.40",
     spinRate: "2300",
-    initialVelocity: "40",
-    theta: "4.7",
-    phi: "-5.5",
+    initialVelocity: "83",
+    theta: "0",
+    phi: "0",
   });
 
   const [angleError, setAngleError] = useState("");
