@@ -28,7 +28,12 @@ class PitchRequest(BaseModel):
     theta: str
     phi: str
 
-# Route
+# Root GET route for health check or sanity
+@app.get("/")
+async def root():
+    return {"message": "Baseball Visualizer backend is running"}
+
+# Route to simulate pitch
 @app.post("/simulate")
 async def simulate_pitch(pitch: PitchRequest):
     html_file, final_position = run_simulation(pitch.dict())
@@ -36,4 +41,3 @@ async def simulate_pitch(pitch: PitchRequest):
         "htmlFile": html_file,  # e.g., static/pitch_result.html
         "finalPosition": final_position
     }
-
