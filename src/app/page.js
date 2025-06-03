@@ -63,10 +63,17 @@ export default function BaseballPitchApp() {
       console.log("✅ Backend response:", result);
 
       const { final_y, final_z, html_file } = result;
+      const fullUrl = `https://rao-baseball-visualizer.onrender.com/${html_file}`;
 
-      alert(`Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(2)}`);
-      window.open(`https://rao-baseball-visualizer.onrender.com/${html_file}`, '_blank');
-
+      if (
+        window.confirm(
+          `Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(
+            2
+          )}\nFinal Z: ${final_z.toFixed(2)}\n\nClick OK to view the 3D pitch.`
+        )
+      ) {
+        window.open(fullUrl, "_blank");
+      }
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠ Error calling the simulation backend. Check console.");
