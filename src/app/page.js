@@ -20,18 +20,8 @@ export default function BaseballPitchApp() {
   });
 
   const [angleError, setAngleError] = useState("");
-  const [resultData, setResultData] = useState<null | {
-    finalY: number;
-    finalZ: number;
-    fileUrl: string;
-  }>(null);
 
-  const BASE_URL =
-    process.env.NODE_ENV === "development"
-      ? "http://127.0.0.1:8000"
-      : "https://rao-baseball-visualizer.onrender.com";
-
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field, value) => {
     setPitchData({ ...pitchData, [field]: value });
 
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
@@ -59,7 +49,7 @@ export default function BaseballPitchApp() {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/simulate`, {
+      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -67,25 +57,19 @@ export default function BaseballPitchApp() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch from backend.");
-      }
+      if (!res.ok) throw new Error("Failed to fetch from backend.");
 
       const result = await res.json();
       console.log("✅ Backend response:", result);
 
-      const fullUrl = `${BASE_URL}/${result.htmlFile}`;
-      setResultData({
-        finalY: result.finalPosition.y,
-        finalZ: result.finalPosition.z,
-        fileUrl: fullUrl,
-      });
+      const { final_y, final_z, html_file } = result;
 
-      // Open result in new tab
-      window.open(fullUrl, "_blank");
+      alert(`Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(2)}`);
+      window.open(`https://rao-baseball-visualizer.onrender.com/${html_file}`, '_blank');
+
     } catch (err) {
       console.error("❌ Backend error:", err);
-      alert("⚠️ Error calling the simulation backend. Check console.");
+      alert("⚠ Error calling the simulation backend. Check console.");
     }
   };
 
@@ -99,7 +83,7 @@ export default function BaseballPitchApp() {
           <div className="space-y-2">
             <label>Pitcher</label>
             <Select value={pitchData.pitcher} onValueChange={(val) => handleChange("pitcher", val)}>
-              <SelectTrigger>{pitchData.pitcher}</SelectTrigger>
+              <SelectTrigger suppressHydrationWarning>{pitchData.pitcher}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="LHP">LHP</SelectItem>
                 <SelectItem value="RHP">RHP</SelectItem>
@@ -108,7 +92,7 @@ export default function BaseballPitchApp() {
 
             <label>Pitch Type</label>
             <Select value={pitchData.pitchType} onValueChange={(val) => handleChange("pitchType", val)}>
-              <SelectTrigger>{pitchData.pitchType}</SelectTrigger>
+              <SelectTrigger suppressHydrationWarning>{pitchData.pitchType}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="Fastball">Fastball</SelectItem>
                 <SelectItem value="Slider">Slider</SelectItem>
@@ -152,15 +136,6 @@ export default function BaseballPitchApp() {
             <Button onClick={handleSubmit} className="w-full mt-4">
               Submit
             </Button>
-
-            {resultData && (
-              <div className="text-sm text-center mt-4 bg-green-50 p-2 rounded">
-                ✅ Simulation complete!<br />
-                📍 Final Y: {resultData.finalY.toFixed(2)}<br />
-                📍 Final Z: {resultData.finalZ.toFixed(2)}<br />
-                🔗 <a href={resultData.fileUrl} target="_blank" className="underline text-blue-600">Open 3D Plot</a>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
