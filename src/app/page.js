@@ -14,14 +14,24 @@ export default function BaseballPitchApp() {
     releaseY: "1.83",
     releaseZ: "0.40",
     spinRate: "2300",
-    initialVelocity: "83",
-    theta: "0",
-    phi: "0",
+    initialVelocity: "40",
+    theta: "4.7",
+    phi: "-5.5",
   });
 
   const [angleError, setAngleError] = useState("");
+  const [resultData, setResultData] = useState<null | {
+    finalY: number;
+    finalZ: number;
+    fileUrl: string;
+  }>(null);
 
-  const handleChange = (field, value) => {
+  const BASE_URL =
+    process.env.NODE_ENV === "development"
+      ? "http://127.0.0.1:8000"
+      : "https://rao-baseball-visualizer.onrender.com";
+
+  const handleChange = (field: string, value: string) => {
     setPitchData({ ...pitchData, [field]: value });
 
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
@@ -49,7 +59,7 @@ export default function BaseballPitchApp() {
     };
 
     try {
-      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
+      const res = await fetch(`${BASE_URL}/simulate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,12 +74,11 @@ export default function BaseballPitchApp() {
       const result = await res.json();
       console.log("✅ Backend response:", result);
 
-      alert(
-        `✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}`
-      );
-
-      // Optionally open result HTML (hosted locally)
-      window.open(`http://127.0.0.1:8000/${result.htmlFile}`, "_blank");
+      setResultData({
+        finalY: result.finalPosition.y,
+        finalZ: result.finalPosition.z,
+        fileUrl: `${BASE_URL}/${result.htmlFile}`,
+      });
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠️ Error calling the simulation backend. Check console.");
@@ -140,6 +149,25 @@ export default function BaseballPitchApp() {
               Submit
             </Button>
           </div>
+
+          {resultData && (
+            <div className="mt-6 bg-green-100 p-4 rounded-lg text-sm">
+              <p className="font-medium text-green-800">✅ Pitch simulation complete!</p>
+              <p>📍 Final Y: {resultData.finalY.toFixed(2)}</p>
+              <p>📍 Final Z: {resultData.finalZ.toFixed(2)}</p>
+              <p>
+                🧾 View result:{" "}
+                <a
+                  href={resultData.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  Open pitch_result.html
+                </a>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
