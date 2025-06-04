@@ -4,7 +4,12 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function BaseballPitchApp() {
   const [pitchData, setPitchData] = useState({
@@ -22,7 +27,7 @@ export default function BaseballPitchApp() {
   const [angleError, setAngleError] = useState("");
 
   const handleChange = (field, value) => {
-    setPitchData({ ...pitchData, [field]: value });
+    setPitchData((prev) => ({ ...prev, [field]: value }));
 
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
       setAngleError(`${field.toUpperCase()} must be between -90° and 90°`);
@@ -33,14 +38,17 @@ export default function BaseballPitchApp() {
 
   const handleSubmit = async () => {
     const { theta, phi } = pitchData;
+    const t = parseFloat(theta);
+    const p = parseFloat(phi);
 
-    if (parseFloat(theta) < -90 || parseFloat(theta) > 90 || parseFloat(phi) < -90 || parseFloat(phi) > 90) {
+    if (isNaN(t) || isNaN(p) || t < -90 || t > 90 || p < -90 || p > 90) {
       setAngleError("Angles must be between -90° and 90°");
       return;
     }
 
     const payload = {
       handedness: pitchData.pitcher,
+      pitchType: pitchData.pitchType,
       initialVelocity: pitchData.initialVelocity,
       spinRate: pitchData.spinRate,
       releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
@@ -51,28 +59,22 @@ export default function BaseballPitchApp() {
     try {
       const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error("Failed to fetch from backend.");
 
       const result = await res.json();
-      console.log("✅ Backend response:", result);
-
       const { final_y, final_z, html_file } = result;
 
-      // Validate response
       if (typeof final_y !== "number" || typeof final_z !== "number" || !html_file) {
-        alert("⚠ Backend returned invalid or incomplete data. Please check backend logs.");
+        alert("⚠ Backend returned invalid or incomplete data.");
         console.error("❌ Incomplete backend response:", result);
         return;
       }
 
       const fullUrl = `https://rao-baseball-visualizer.onrender.com/${html_file}`;
-
       if (
         window.confirm(
           `Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(
@@ -96,6 +98,7 @@ export default function BaseballPitchApp() {
           <img src="/pitch-visual.png" alt="Pitch Trajectory" className="rounded" />
 
           <div className="space-y-2">
+            {/* Pitcher */}
             <label>Pitcher</label>
             <Select value={pitchData.pitcher} onValueChange={(val) => handleChange("pitcher", val)}>
               <SelectTrigger suppressHydrationWarning>{pitchData.pitcher}</SelectTrigger>
@@ -105,6 +108,7 @@ export default function BaseballPitchApp() {
               </SelectContent>
             </Select>
 
+            {/* Pitch Type */}
             <label>Pitch Type</label>
             <Select value={pitchData.pitchType} onValueChange={(val) => handleChange("pitchType", val)}>
               <SelectTrigger suppressHydrationWarning>{pitchData.pitchType}</SelectTrigger>
@@ -115,13 +119,27 @@ export default function BaseballPitchApp() {
               </SelectContent>
             </Select>
 
+            {/* Release Position */}
             <label>Release Position (X, Y, Z)</label>
             <div className="grid grid-cols-3 gap-2">
-              <Input value={pitchData.releaseX} onChange={(e) => handleChange("releaseX", e.target.value)} placeholder="X" />
-              <Input value={pitchData.releaseY} onChange={(e) => handleChange("releaseY", e.target.value)} placeholder="Y" />
-              <Input value={pitchData.releaseZ} onChange={(e) => handleChange("releaseZ", e.target.value)} placeholder="Z" />
+              <Input
+                placeholder="X"
+                value={pitchData.releaseX}
+                onChange={(e) => handleChange("releaseX", e.target.value)}
+              />
+              <Input
+                placeholder="Y"
+                value={pitchData.releaseY}
+                onChange={(e) => handleChange("releaseY", e.target.value)}
+              />
+              <Input
+                placeholder="Z"
+                value={pitchData.releaseZ}
+                onChange={(e) => handleChange("releaseZ", e.target.value)}
+              />
             </div>
 
+            {/* Spin & Velocity */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label>Spin Rate (rpm)</label>
@@ -133,16 +151,17 @@ export default function BaseballPitchApp() {
               </div>
             </div>
 
+            {/* Theta & Phi */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label>Theta (°)</label>
                 <Input value={pitchData.theta} onChange={(e) => handleChange("theta", e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">θ (Theta): Vertical launch angle.</p>
+                <p className="text-xs text-gray-500 mt-1">Vertical launch angle.</p>
               </div>
               <div>
                 <label>Phi (°)</label>
                 <Input value={pitchData.phi} onChange={(e) => handleChange("phi", e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">ϕ (Phi): Lateral deviation angle.</p>
+                <p className="text-xs text-gray-500 mt-1">Lateral deviation angle.</p>
               </div>
             </div>
 
