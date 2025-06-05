@@ -7,10 +7,10 @@ import os
 
 app = FastAPI()
 
-# Allow CORS
+# Allow CORS for local dev and Vercel frontend
 origins = [
-    "http://localhost:3000",  # local dev
-    "https://rao-baseball-frontend.vercel.app",  # Vercel frontend
+    "http://localhost:3000",
+    "https://rao-baseball-frontend.vercel.app",
 ]
 
 app.add_middleware(
@@ -21,14 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Create static folder if not exist
+# Create and mount static directory
 if not os.path.exists("static"):
     os.makedirs("static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Define request model
+# Root route (for Render health check or browser testing)
+@app.get("/")
+async def root():
+    return {"message": "Backend is running"}
+
+# Request model for pitch simulation
 class PitchParameters(BaseModel):
     pitcher_hand: str
     pitch_type: str
@@ -40,13 +43,15 @@ class PitchParameters(BaseModel):
     theta: float
     phi: float
 
+# Simulation route
 @app.post("/simulate")
 async def run_simulation(params: PitchParameters):
-    # Dummy data for plotting
+    # Simulated trajectory data (dummy for now)
     x = [params.x + i * 0.1 for i in range(50)]
     y = [params.y + i * 0.1 for i in range(50)]
     z = [params.z - 0.01 * i**2 for i in range(50)]
 
+    # Create Plotly 3D figure
     fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='lines+markers')])
     fig.update_layout(
         scene=dict(
@@ -57,7 +62,7 @@ async def run_simulation(params: PitchParameters):
         title="Pitch Trajectory"
     )
 
-    # Save file
+    # Save HTML file to static directory
     file_path = os.path.join("static", "pitch_result.html")
     fig.write_html(file_path)
 
