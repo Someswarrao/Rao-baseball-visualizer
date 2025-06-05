@@ -1,43 +1,64 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from simulate_pitch import run_simulation
+import plotly.graph_objects as go
 import os
 
 app = FastAPI()
 
-# Enable CORS for frontend
+# Allow CORS
+origins = [
+    "http://localhost:3000",  # local dev
+    "https://rao-baseball-frontend.vercel.app",  # Vercel frontend
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Serve static HTML files
+# Mount static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Input schema
-class PitchRequest(BaseModel):
-    handedness: str
-    initialVelocity: str
-    spinRate: str
-    releasePosition: str
-    theta: str
-    phi: str
+# Create static folder if not exist
+if not os.path.exists("static"):
+    os.makedirs("static")
 
-# Root GET route for health check or sanity
-@app.get("/")
-async def root():
-    return {"message": "Baseball Visualizer backend is running"}
+# Define request model
+class PitchParameters(BaseModel):
+    pitcher_hand: str
+    pitch_type: str
+    x: float
+    y: float
+    z: float
+    speed: float
+    spin_rate: float
+    theta: float
+    phi: float
 
-# Route to simulate pitch
 @app.post("/simulate")
-async def simulate_pitch(pitch: PitchRequest):
-    html_file, final_position = run_simulation(pitch.dict())
-    return {
-        "htmlFile": html_file,  # e.g., static/pitch_result.html
-        "finalPosition": final_position
-    }
+async def run_simulation(params: PitchParameters):
+    # Dummy data for plotting
+    x = [params.x + i * 0.1 for i in range(50)]
+    y = [params.y + i * 0.1 for i in range(50)]
+    z = [params.z - 0.01 * i**2 for i in range(50)]
+
+    fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='lines+markers')])
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        ),
+        title="Pitch Trajectory"
+    )
+
+    # Save file
+    file_path = os.path.join("static", "pitch_result.html")
+    fig.write_html(file_path)
+
+    return {"file_path": "/static/pitch_result.html"}
