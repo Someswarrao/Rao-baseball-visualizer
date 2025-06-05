@@ -11,6 +11,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://rao-baseball-frontend.vercel.app",
+    "https://rao-baseball-visualizer.onrender.com",
 ]
 
 app.add_middleware(
