@@ -2,10 +2,8 @@ import math
 import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
-import os  # ✅ For creating the static folder if it doesn't exist
 
 def run_simulation(pitch_data):
-    # ─── Constants ───────────────────────────────────────────
     m = 0.145
     g = 9.81
     rho = 1.225
@@ -16,7 +14,6 @@ def run_simulation(pitch_data):
     dt = 0.0005
     L = 18.4
 
-    # ─── Input Parameters ─────────────────────────────────────
     handedness = pitch_data["handedness"]
     V0 = float(pitch_data["initialVelocity"])
     spin_rate = float(pitch_data["spinRate"])
@@ -24,7 +21,6 @@ def run_simulation(pitch_data):
     theta = math.radians(float(pitch_data["theta"]))
     phi = math.radians(float(pitch_data["phi"]))
 
-    # ─── Initial Velocity and Spin ────────────────────────────
     omega = 2 * math.pi * spin_rate / 60
     Vx = V0 * math.cos(theta) * math.cos(phi)
     Vy = V0 * math.sin(theta)
@@ -47,7 +43,10 @@ def run_simulation(pitch_data):
         spin_factor = (R * rps) / V
         Cd = 0.30 + 0.15 * spin_factor**2
 
-        Cl = (0.05 if handedness == "RHP" else 0.09) + 0.6 * spin_factor
+        if handedness == "RHP":
+            Cl = 0.05 + 0.6 * spin_factor
+        else:
+            Cl = 0.09 + 0.6 * spin_factor
 
         Fd = 0.5 * Cd * rho * A * V**2
         Fl = 0.5 * Cl * rho * A * V**2
@@ -89,6 +88,7 @@ def run_simulation(pitch_data):
 
     sz_top, sz_bottom = 1.0, 0.6
     sz_left, sz_right = -0.2159, 0.2159
+    L = 18.4
     strike_zone_lines = [
         [[L, L], [sz_bottom, sz_bottom], [sz_left, sz_right]],
         [[L, L], [sz_top, sz_top], [sz_left, sz_right]],
@@ -118,12 +118,7 @@ def run_simulation(pitch_data):
     )
 
     fig = go.Figure(data=[trace_traj] + strike_traces, layout=layout)
-
-    # ✅ Ensure static directory exists
-    os.makedirs("static", exist_ok=True)
-
-    # ✅ Save HTML inside static folder
-    file_path = "static/pitch_result.html"
+    file_path = "pitch_result.html"
     pio.write_html(fig, file_path)
 
     return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
