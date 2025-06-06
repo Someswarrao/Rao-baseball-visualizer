@@ -20,12 +20,12 @@ export default function BaseballPitchApp() {
   });
 
   const [angleError, setAngleError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setPitchData({ ...pitchData, [field]: value });
+
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
-      setAngleError(`${field.toUpperCase()} must be between -90° and 90°`);
+      setAngleError(${field.toUpperCase()} must be between -90° and 90°);
     } else {
       setAngleError("");
     }
@@ -33,49 +33,43 @@ export default function BaseballPitchApp() {
 
   const handleSubmit = async () => {
     const { theta, phi } = pitchData;
+
     if (parseFloat(theta) < -90 || parseFloat(theta) > 90 || parseFloat(phi) < -90 || parseFloat(phi) > 90) {
       setAngleError("Angles must be between -90° and 90°");
       return;
     }
-    setAngleError("");
-    setLoading(true);
 
     const payload = {
       handedness: pitchData.pitcher,
-      pitchType: pitchData.pitchType,
-      initialVelocity: Number(pitchData.initialVelocity),
-      spinRate: Number(pitchData.spinRate),
-      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
-      theta: Number(pitchData.theta),
-      phi: Number(pitchData.phi),
+      initialVelocity: pitchData.initialVelocity,
+      spinRate: pitchData.spinRate,
+      releasePosition: ${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ},
+      theta: pitchData.theta,
+      phi: pitchData.phi,
     };
 
     try {
-      const backendBaseURL = "https://rao-baseball-visualizer.onrender.com"; // Your backend URL
-
-      const res = await fetch(`${backendBaseURL}/simulate`, {
+      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || "Backend error");
-      }
+      if (!res.ok) throw new Error("Failed to fetch from backend.");
 
       const result = await res.json();
+      console.log("✅ Backend response:", result);
 
-      alert(
-        `✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}`
-      );
+      const { final_y, final_z, html_file } = result;
 
-      window.open(`${backendBaseURL}/static/${result.htmlFile}`, "_blank");
+      alert(Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(2)});
+      window.open(https://rao-baseball-visualizer.onrender.com/${html_file}, '_blank');
+
     } catch (err) {
       console.error("❌ Backend error:", err);
-      alert(`⚠ Error calling the simulation backend:\n${err.message}`);
-    } finally {
-      setLoading(false);
+      alert("⚠ Error calling the simulation backend. Check console.");
     }
   };
 
@@ -139,8 +133,8 @@ export default function BaseballPitchApp() {
 
             {angleError && <p className="text-red-500 text-sm">{angleError}</p>}
 
-            <Button onClick={handleSubmit} className="w-full mt-4" disabled={loading}>
-              {loading ? "Simulating..." : "Submit"}
+            <Button onClick={handleSubmit} className="w-full mt-4">
+              Submit
             </Button>
           </div>
         </CardContent>
