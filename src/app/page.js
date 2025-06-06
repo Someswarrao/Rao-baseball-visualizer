@@ -25,7 +25,7 @@ export default function BaseballPitchApp() {
     setPitchData({ ...pitchData, [field]: value });
 
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
-      setAngleError(${field.toUpperCase()} must be between -90° and 90°);
+      setAngleError(`${field.toUpperCase()} must be between -90° and 90°);
     } else {
       setAngleError("");
     }
@@ -43,7 +43,7 @@ export default function BaseballPitchApp() {
       handedness: pitchData.pitcher,
       initialVelocity: pitchData.initialVelocity,
       spinRate: pitchData.spinRate,
-      releasePosition: ${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ},
+      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ},
       theta: pitchData.theta,
       phi: pitchData.phi,
     };
@@ -69,7 +69,8 @@ export default function BaseballPitchApp() {
       );
 
       // Optionally open result HTML (hosted locally)
-      window.open(http://127.0.0.1:8000/${result.htmlFile}, "_blank");
+      window.open(`https://rao-baseball-visualizer.onrender.com/${result.htmlFile}`, "_blank");
+
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠ Error calling the simulation backend. Check console.");
