@@ -57,16 +57,19 @@ export default function BaseballPitchApp() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to fetch from backend.");
+      if (!res.ok) {
+        throw new Error("Failed to fetch from backend.");
+      }
 
       const result = await res.json();
       console.log("✅ Backend response:", result);
 
-      const { final_y, final_z, html_file } = result;
+      alert(
+        ✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}
+      );
 
-      alert(Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(2)});
-      window.open(https://rao-baseball-visualizer.onrender.com/${html_file}, '_blank');
-
+      // Optionally open result HTML (hosted locally)
+      window.open(http://127.0.0.1:8000/${result.htmlFile}, "_blank");
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠ Error calling the simulation backend. Check console.");
