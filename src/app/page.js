@@ -20,12 +20,13 @@ export default function BaseballPitchApp() {
   });
 
   const [angleError, setAngleError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
-    setPitchData({ ...pitchData, [field]: value });
+    setPitchData((prev) => ({ ...prev, [field]: value }));
 
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
-      setAngleError(${field.toUpperCase()} must be between -90° and 90°);
+      setAngleError(`${field.toUpperCase()} must be between -90° and 90°`);
     } else {
       setAngleError("");
     }
@@ -41,15 +42,18 @@ export default function BaseballPitchApp() {
 
     const payload = {
       handedness: pitchData.pitcher,
+      pitchType: pitchData.pitchType,
       initialVelocity: pitchData.initialVelocity,
       spinRate: pitchData.spinRate,
-      releasePosition: ${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ},
+      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
       theta: pitchData.theta,
       phi: pitchData.phi,
     };
 
+    setLoading(true);
+
     try {
-      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
+      const res = await fetch("https://your-render-api-url.onrender.com/simulate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,19 +61,19 @@ export default function BaseballPitchApp() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to fetch from backend.");
+      if (!res.ok) throw new Error("Failed to fetch from backend");
 
       const result = await res.json();
-      console.log("✅ Backend response:", result);
+      alert(
+        `✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}`
+      );
 
-      const { final_y, final_z, html_file } = result;
-
-      alert(Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(2)});
-      window.open(https://rao-baseball-visualizer.onrender.com/${html_file}, '_blank');
-
+      window.open(`https://your-render-api-url.onrender.com/${result.htmlFile}`, "_blank");
     } catch (err) {
       console.error("❌ Backend error:", err);
-      alert("⚠ Error calling the simulation backend. Check console.");
+      alert("⚠️ Could not complete simulation. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,7 +87,7 @@ export default function BaseballPitchApp() {
           <div className="space-y-2">
             <label>Pitcher</label>
             <Select value={pitchData.pitcher} onValueChange={(val) => handleChange("pitcher", val)}>
-              <SelectTrigger suppressHydrationWarning>{pitchData.pitcher}</SelectTrigger>
+              <SelectTrigger>{pitchData.pitcher}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="LHP">LHP</SelectItem>
                 <SelectItem value="RHP">RHP</SelectItem>
@@ -92,7 +96,7 @@ export default function BaseballPitchApp() {
 
             <label>Pitch Type</label>
             <Select value={pitchData.pitchType} onValueChange={(val) => handleChange("pitchType", val)}>
-              <SelectTrigger suppressHydrationWarning>{pitchData.pitchType}</SelectTrigger>
+              <SelectTrigger>{pitchData.pitchType}</SelectTrigger>
               <SelectContent>
                 <SelectItem value="Fastball">Fastball</SelectItem>
                 <SelectItem value="Slider">Slider</SelectItem>
@@ -122,19 +126,19 @@ export default function BaseballPitchApp() {
               <div>
                 <label>Theta (°)</label>
                 <Input value={pitchData.theta} onChange={(e) => handleChange("theta", e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">θ (Theta): Vertical launch angle.</p>
+                <p className="text-xs text-gray-500 mt-1">Vertical launch angle</p>
               </div>
               <div>
                 <label>Phi (°)</label>
                 <Input value={pitchData.phi} onChange={(e) => handleChange("phi", e.target.value)} />
-                <p className="text-xs text-gray-500 mt-1">ϕ (Phi): Lateral deviation angle.</p>
+                <p className="text-xs text-gray-500 mt-1">Lateral deviation angle</p>
               </div>
             </div>
 
             {angleError && <p className="text-red-500 text-sm">{angleError}</p>}
 
-            <Button onClick={handleSubmit} className="w-full mt-4">
-              Submit
+            <Button onClick={handleSubmit} className="w-full mt-4" disabled={loading}>
+              {loading ? "Simulating..." : "Submit"}
             </Button>
           </div>
         </CardContent>
