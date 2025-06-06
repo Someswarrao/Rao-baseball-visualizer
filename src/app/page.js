@@ -24,12 +24,11 @@ export default function BaseballPitchApp() {
   const handleChange = (field, value) => {
     setPitchData({ ...pitchData, [field]: value });
 
-    if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
-      setAngleError(`${field.toUpperCase()} must be between -90° and 90°);
-    } else {
-      setAngleError("");
-    }
-  };
+   if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
+  setAngleError(`${field.toUpperCase()} must be between -90° and 90°`);
+} else {
+  setAngleError("");
+}
 
   const handleSubmit = async () => {
     const { theta, phi } = pitchData;
@@ -40,13 +39,13 @@ export default function BaseballPitchApp() {
     }
 
     const payload = {
-      handedness: pitchData.pitcher,
-      initialVelocity: pitchData.initialVelocity,
-      spinRate: pitchData.spinRate,
-      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ},
-      theta: pitchData.theta,
-      phi: pitchData.phi,
-    };
+  handedness: pitchData.pitcher,
+  initialVelocity: pitchData.initialVelocity,
+  spinRate: pitchData.spinRate,
+  releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
+  theta: pitchData.theta,
+  phi: pitchData.phi,
+};
 
     try {
       const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
@@ -64,9 +63,8 @@ export default function BaseballPitchApp() {
       const result = await res.json();
       console.log("✅ Backend response:", result);
 
-      alert(
-        ✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}
-      );
+      alert(`✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}`);
+
 
       // Optionally open result HTML (hosted locally)
       window.open(`https://rao-baseball-visualizer.onrender.com/${result.htmlFile}`, "_blank");

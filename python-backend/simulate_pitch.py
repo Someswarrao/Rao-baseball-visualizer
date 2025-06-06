@@ -41,7 +41,7 @@ def run_simulation(pitch_data):
     trajectory = [(x, y, z)]
 
     while x < L:
-        V = math.sqrt(Vx*2 + Vy*2 + Vz*2)
+        V = math.sqrt(Vx**2 + Vy**2 + Vz**2)
         Re = (rho * D * V) / mu
         rps = spin_rate / 60
         spin_factor = (R * rps) / V
@@ -59,7 +59,7 @@ def run_simulation(pitch_data):
         cx = omega_y * Vz - omega_z * Vy
         cy = omega_z * Vx - omega_x * Vz
         cz = omega_x * Vy - omega_y * Vx
-        mag = math.sqrt(cx*2 + cy*2 + cz*2) + 1e-8
+        mag = math.sqrt(cx**2 + cy**2 + cz**2) + 1e-8
         nx, ny, nz = cx / mag, cy / mag, cz / mag
 
         ax_l = Fl * nx / m
