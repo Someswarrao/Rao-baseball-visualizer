@@ -1,0 +1,19 @@
+# Use official Python image as base
+FROM python:3.9-slim
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your app source code into container
+COPY . .
+
+# Expose port 8080 (default for Cloud Run)
+ENV PORT 8080
+EXPOSE 8080
+
+# Command to run your FastAPI app with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

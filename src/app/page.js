@@ -25,6 +25,7 @@ export default function BaseballPitchApp() {
   });
 
   const [angleError, setAngleError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setPitchData((prev) => ({ ...prev, [field]: value }));
@@ -37,23 +38,50 @@ export default function BaseballPitchApp() {
   };
 
   const handleSubmit = async () => {
-    const { theta, phi } = pitchData;
-    const t = parseFloat(theta);
-    const p = parseFloat(phi);
+    setLoading(true);
 
-    if (isNaN(t) || isNaN(p) || t < -90 || t > 90 || p < -90 || p > 90) {
-      setAngleError("Angles must be between -90° and 90°");
+    const {
+      releaseX, releaseY, releaseZ,
+      spinRate, initialVelocity,
+      theta, phi, pitcher, pitchType
+    } = pitchData;
+
+    const parsed = {
+      x: parseFloat(releaseX),
+      y: parseFloat(releaseY),
+      z: parseFloat(releaseZ),
+      spin_rate: parseFloat(spinRate),
+      speed: parseFloat(initialVelocity),
+      theta: parseFloat(theta),
+      phi: parseFloat(phi),
+    };
+
+    // Validate numbers
+    if (Object.values(parsed).some(val => isNaN(val))) {
+      setAngleError("All input fields must contain valid numbers.");
+      setLoading(false);
       return;
     }
 
+    // Validate angles
+    if (parsed.theta < -90 || parsed.theta > 90 || parsed.phi < -90 || parsed.phi > 90) {
+      setAngleError("Angles must be between -90° and 90°.");
+      setLoading(false);
+      return;
+    }
+
+    // Optional: Velocity and spin sanity checks
+    if (parsed.speed < 50 || parsed.speed > 110) {
+      alert("⚠️ Initial velocity seems unrealistic (recommended: 50–110 m/s).");
+    }
+    if (parsed.spin_rate < 1000 || parsed.spin_rate > 3500) {
+      alert("⚠️ Spin rate seems unrealistic (recommended: 1000–3500 rpm).");
+    }
+
     const payload = {
-      handedness: pitchData.pitcher,
-      pitchType: pitchData.pitchType,
-      initialVelocity: pitchData.initialVelocity,
-      spinRate: pitchData.spinRate,
-      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
-      theta: pitchData.theta,
-      phi: pitchData.phi,
+      pitcher_hand: pitcher,
+      pitch_type: pitchType,
+      ...parsed,
     };
 
     try {
@@ -66,27 +94,23 @@ export default function BaseballPitchApp() {
       if (!res.ok) throw new Error("Failed to fetch from backend.");
 
       const result = await res.json();
-      const { final_y, final_z, html_file } = result;
+      const filePath = result.file_path;
 
-      if (typeof final_y !== "number" || typeof final_z !== "number" || !html_file) {
+      if (!filePath) {
         alert("⚠ Backend returned invalid or incomplete data.");
         console.error("❌ Incomplete backend response:", result);
         return;
       }
 
-      const fullUrl = `https://rao-baseball-visualizer.onrender.com/${html_file}`;
-      if (
-        window.confirm(
-          `Pitch simulation complete!\n\nFinal Y: ${final_y.toFixed(2)}\nFinal Z: ${final_z.toFixed(
-            2
-          )}\n\nClick OK to view the 3D pitch.`
-        )
-      ) {
+      const fullUrl = `https://rao-baseball-visualizer.onrender.com${filePath}`;
+      if (window.confirm("✅ Pitch simulation complete!\n\nClick OK to view the 3D pitch.")) {
         window.open(fullUrl, "_blank");
       }
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠ Error calling the simulation backend. Check console.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,7 +122,6 @@ export default function BaseballPitchApp() {
           <img src="/pitch-visual.png" alt="Pitch Trajectory" className="rounded" />
 
           <div className="space-y-2">
-            {/* Pitcher */}
             <label>Pitcher</label>
             <Select value={pitchData.pitcher} onValueChange={(val) => handleChange("pitcher", val)}>
               <SelectTrigger suppressHydrationWarning>{pitchData.pitcher}</SelectTrigger>
@@ -108,7 +131,6 @@ export default function BaseballPitchApp() {
               </SelectContent>
             </Select>
 
-            {/* Pitch Type */}
             <label>Pitch Type</label>
             <Select value={pitchData.pitchType} onValueChange={(val) => handleChange("pitchType", val)}>
               <SelectTrigger suppressHydrationWarning>{pitchData.pitchType}</SelectTrigger>
@@ -119,27 +141,13 @@ export default function BaseballPitchApp() {
               </SelectContent>
             </Select>
 
-            {/* Release Position */}
             <label>Release Position (X, Y, Z)</label>
             <div className="grid grid-cols-3 gap-2">
-              <Input
-                placeholder="X"
-                value={pitchData.releaseX}
-                onChange={(e) => handleChange("releaseX", e.target.value)}
-              />
-              <Input
-                placeholder="Y"
-                value={pitchData.releaseY}
-                onChange={(e) => handleChange("releaseY", e.target.value)}
-              />
-              <Input
-                placeholder="Z"
-                value={pitchData.releaseZ}
-                onChange={(e) => handleChange("releaseZ", e.target.value)}
-              />
+              <Input placeholder="X (m)" value={pitchData.releaseX} onChange={(e) => handleChange("releaseX", e.target.value)} />
+              <Input placeholder="Y (m)" value={pitchData.releaseY} onChange={(e) => handleChange("releaseY", e.target.value)} />
+              <Input placeholder="Z (m)" value={pitchData.releaseZ} onChange={(e) => handleChange("releaseZ", e.target.value)} />
             </div>
 
-            {/* Spin & Velocity */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label>Spin Rate (rpm)</label>
@@ -151,7 +159,6 @@ export default function BaseballPitchApp() {
               </div>
             </div>
 
-            {/* Theta & Phi */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label>Theta (°)</label>
@@ -165,10 +172,14 @@ export default function BaseballPitchApp() {
               </div>
             </div>
 
-            {angleError && <p className="text-red-500 text-sm">{angleError}</p>}
+            {angleError && (
+              <div className="bg-red-100 text-red-700 p-2 rounded text-sm">
+                {angleError}
+              </div>
+            )}
 
-            <Button onClick={handleSubmit} className="w-full mt-4">
-              Submit
+            <Button onClick={handleSubmit} disabled={loading} className="w-full mt-4">
+              {loading ? "Simulating..." : "Submit"}
             </Button>
           </div>
         </CardContent>
