@@ -20,10 +20,10 @@ export default function BaseballPitchApp() {
   });
 
   const [angleError, setAngleError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setPitchData({ ...pitchData, [field]: value });
-
     if ((field === "theta" || field === "phi") && (parseFloat(value) < -90 || parseFloat(value) > 90)) {
       setAngleError(`${field.toUpperCase()} must be between -90° and 90°`);
     } else {
@@ -33,50 +33,49 @@ export default function BaseballPitchApp() {
 
   const handleSubmit = async () => {
     const { theta, phi } = pitchData;
-
     if (parseFloat(theta) < -90 || parseFloat(theta) > 90 || parseFloat(phi) < -90 || parseFloat(phi) > 90) {
       setAngleError("Angles must be between -90° and 90°");
       return;
     }
+    setAngleError("");
+    setLoading(true);
 
     const payload = {
       handedness: pitchData.pitcher,
-      pitchType: pitchData.pitchType,  // Optional: send pitchType if backend needs it
-      initialVelocity: pitchData.initialVelocity,
-      spinRate: pitchData.spinRate,
+      pitchType: pitchData.pitchType,
+      initialVelocity: Number(pitchData.initialVelocity),
+      spinRate: Number(pitchData.spinRate),
       releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
-      theta: pitchData.theta,
-      phi: pitchData.phi,
+      theta: Number(pitchData.theta),
+      phi: Number(pitchData.phi),
     };
 
     try {
-      const backendBaseURL = "https://rao-baseball-visualizer.onrender.com"; // Change this to your backend URL
+      const backendBaseURL = "https://rao-baseball-visualizer.onrender.com"; // Your backend URL
 
       const res = await fetch(`${backendBaseURL}/simulate`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to fetch from backend.");
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Backend error");
       }
 
       const result = await res.json();
-      console.log("✅ Backend response:", result);
 
       alert(
         `✅ Pitch simulation complete!\n📍 Final Y: ${result.finalPosition.y}\n📍 Final Z: ${result.finalPosition.z}\n🧾 File: ${result.htmlFile}`
       );
 
-      // Open the generated plot HTML in a new tab
-      const fileURL = `${backendBaseURL}/static/${result.htmlFile}`;
-      window.open(fileURL, "_blank");
+      window.open(`${backendBaseURL}/static/${result.htmlFile}`, "_blank");
     } catch (err) {
       console.error("❌ Backend error:", err);
-      alert("⚠ Error calling the simulation backend. Check console.");
+      alert(`⚠ Error calling the simulation backend:\n${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,8 +139,8 @@ export default function BaseballPitchApp() {
 
             {angleError && <p className="text-red-500 text-sm">{angleError}</p>}
 
-            <Button onClick={handleSubmit} className="w-full mt-4">
-              Submit
+            <Button onClick={handleSubmit} className="w-full mt-4" disabled={loading}>
+              {loading ? "Simulating..." : "Submit"}
             </Button>
           </div>
         </CardContent>
