@@ -1,5 +1,6 @@
 fastapi
 uvicorn
-numpy
-plotly
+pydantic
 python-multipart
+plotly
+numpy
