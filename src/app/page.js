@@ -40,13 +40,14 @@ export default function BaseballPitchApp() {
     }
 
     const payload = {
-      handedness: pitchData.pitcher,
-      initialVelocity: pitchData.initialVelocity,
-      spinRate: pitchData.spinRate,
-      releasePosition: `${pitchData.releaseX},${pitchData.releaseY},${pitchData.releaseZ}`,
-      theta: pitchData.theta,
-      phi: pitchData.phi,
-    };
+  handedness: String(pitchData.pitcher),
+  initialVelocity: String(pitchData.initialVelocity),
+  spinRate: String(pitchData.spinRate),
+  releasePosition: `${String(pitchData.releaseX)},${String(pitchData.releaseY)},${String(pitchData.releaseZ)}`,
+  theta: String(pitchData.theta),
+  phi: String(pitchData.phi),
+};
+
 
     try {
       const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
