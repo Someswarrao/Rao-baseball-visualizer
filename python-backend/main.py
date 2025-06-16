@@ -11,7 +11,7 @@ app = FastAPI()
 # ───── CORS Middleware ─────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change this to frontend domain in production
+    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # Change this to frontend domain in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
