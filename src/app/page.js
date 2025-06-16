@@ -49,7 +49,7 @@ export default function BaseballPitchApp() {
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/simulate", {
+      const res = await fetch("https://rao-baseball-visualizer.onrender.com/simulate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export default function BaseballPitchApp() {
       );
 
       // Optionally open result HTML (hosted locally)
-      window.open(`http://127.0.0.1:8000/${result.htmlFile}`, "_blank");
+      window.open(`https://rao-baseball-visualizer.onrender.com/${result.htmlFile}`, "_blank");
     } catch (err) {
       console.error("❌ Backend error:", err);
       alert("⚠️ Error calling the simulation backend. Check console.");
