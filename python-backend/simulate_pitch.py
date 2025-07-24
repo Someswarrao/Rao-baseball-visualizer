@@ -6,37 +6,29 @@ import os
 
 def run_simulation(pitch_data):
     try:
-        # ─── Validate Inputs ───
         required_keys = ["handedness", "initialVelocity", "spinRate", "releasePosition", "theta", "phi"]
         for key in required_keys:
             if key not in pitch_data:
-                raise ValueError(f"Missing required input: '{key}'")
+                raise ValueError(f"Missing input: {key}")
 
-        handedness = pitch_data["handedness"]
-        if handedness not in ["RHP", "LHP"]:
-            raise ValueError("Handedness must be 'RHP' or 'LHP'")
+        handedness = pitch_data["handedness"].strip().upper()
+        if handedness not in ["LHP", "RHP"]:
+            raise ValueError("Handedness must be 'LHP' or 'RHP'")
 
-        try:
-            V0 = float(pitch_data["initialVelocity"])
-            spin_rate = float(pitch_data["spinRate"])
-            x0, y0, z0 = map(float, pitch_data["releasePosition"].split(","))
-            theta = math.radians(float(pitch_data["theta"]))
-            phi = math.radians(float(pitch_data["phi"]))
-        except Exception:
-            raise ValueError("Initial values must be numeric and formatted correctly.")
+        V0 = float(pitch_data["initialVelocity"])
+        spin_rate = float(pitch_data["spinRate"])
+        x0, y0, z0 = map(float, pitch_data["releasePosition"].split(","))
+        theta = math.radians(float(pitch_data["theta"]))
+        phi = math.radians(float(pitch_data["phi"]))
 
-        # ─── Constants ───
         m = 0.145
         g = 9.81
         rho = 1.225
         A = 0.00421
-        mu = 1.81e-5
         R = 0.037
-        D = 2 * R
         dt = 0.0005
         L = 18.4
 
-        # ─── Initial Velocities and Spins ───
         omega = 2 * math.pi * spin_rate / 60
         Vx = V0 * math.cos(theta) * math.cos(phi)
         Vy = V0 * math.sin(theta)
@@ -50,15 +42,12 @@ def run_simulation(pitch_data):
 
         vertical_lift_scale = 0.85 if handedness == "RHP" else 1.0
 
-        # ─── Simulation ───
         x, y, z = x0, y0, z0
         trajectory = [(x, y, z)]
 
         while x < L:
             V = math.sqrt(Vx**2 + Vy**2 + Vz**2)
-            Re = (rho * D * V) / mu
-            rps = spin_rate / 60
-            spin_factor = (R * rps) / V
+            spin_factor = (R * spin_rate / 60) / V
 
             Cd = 0.30 + 0.15 * spin_factor**2
             Cl = (0.05 if handedness == "RHP" else 0.09) + 0.6 * spin_factor
@@ -92,15 +81,15 @@ def run_simulation(pitch_data):
         trajectory = np.array(trajectory)
         fx, fy, fz = trajectory[-1]
 
-        # ─── Plot Trajectory ───
         trace_traj = go.Scatter3d(
             x=trajectory[:, 0], y=trajectory[:, 1], z=trajectory[:, 2],
             mode='lines',
-            line=dict(color='royalblue', width=4, dash='dash'),
+            line=dict(color='royalblue', width=7),
             name='Trajectory'
         )
 
-        # ─── Strike Zone ───
+        # Strike zone + visuals remain same...
+
         sz_top, sz_bottom = 1.0, 0.6
         sz_left, sz_right = -0.2159, 0.2159
         strike_zone_lines = [
@@ -113,31 +102,86 @@ def run_simulation(pitch_data):
             go.Scatter3d(
                 x=line[0], y=line[1], z=line[2],
                 mode='lines',
-                line=dict(color='black', width=4),
-                name='Strike Zone' if i == 0 else '',
-                showlegend=(i == 0)
+                line=dict(color='black', width=5),
+                name='Strike Zone' if i == 0 else ''
             ) for i, line in enumerate(strike_zone_lines)
+        ]
+
+        home_x = [18.4, 18.35, 18.45, 18.48, 18.32, 18.4]
+        home_y = [0, 0, 0, 0.02, 0.02, 0]
+        home_z = [0, -0.10795, -0.10795, 0.0, 0.0, 0.0]
+        home_plate = go.Scatter3d(
+            x=home_x, y=home_y, z=home_z,
+            mode='lines',
+            line=dict(color='white', width=4),
+            name='Home Plate'
+        )
+
+        xz_plane = go.Surface(
+            x=[[0, 20], [0, 20]],
+            y=[[0, 0], [0, 0]],
+            z=[[-2.5, -2.5], [2.5, 2.5]],
+            surfacecolor=[[0, 0], [0, 0]],
+            colorscale=[[0, 'saddlebrown'], [1, 'saddlebrown']],
+            opacity=1,
+            showscale=False,
+            name='Dirt Ground'
+        )
+
+        def wall_surface(x, y, z):
+            return go.Surface(
+                x=x, y=y, z=z,
+                surfacecolor=[[0, 1], [0, 1]],
+                colorscale=[[0, 'green'], [1, 'green']],
+                opacity=0.4,
+                showscale=False,
+            )
+
+        yz_right = wall_surface([[20.001, 20.001], [20.001, 20.001]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
+        yz_left = wall_surface([[0, 0], [0, 0]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
+        xz_front = wall_surface([[0, 20], [0, 20]], [[0, 2.5], [0, 2.5]], [[2.5, 2.5], [2.5, 2.5]])
+
+        camera_views = {
+            "Side View": dict(eye=dict(x=9, y=1.2, z=6), up=dict(x=0, y=1, z=0)),
+            "Catcher View": dict(eye=dict(x=18.4, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
+            "Pitcher View": dict(eye=dict(x=-10, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
+            "Top View": dict(eye=dict(x=9, y=12, z=0), up=dict(x=0, y=0, z=1)),
+            "Diagonal View": dict(eye=dict(x=15, y=4, z=4), up=dict(x=0, y=1, z=0)),
+            "Umpire View": dict(eye=dict(x=18.3, y=1.5, z=0.2), up=dict(x=0, y=1, z=0)),
+            "Mobile Tilt": dict(eye=dict(x=18, y=2, z=1.2), up=dict(x=0, y=1, z=0)),
+        }
+
+        buttons = [
+            dict(label=name, method="relayout", args=[{"scene.camera": view}])
+            for name, view in camera_views.items()
         ]
 
         layout = go.Layout(
             title=f"{handedness} Pitch Trajectory with Strike Zone",
+            autosize=True,
+            margin=dict(l=0, r=0, t=50, b=0),
             scene=dict(
-                xaxis=dict(title='Distance to catcher (x)', range=[0, 20]),
-                yaxis=dict(title='Height (y)', range=[0, 2]),
-                zaxis=dict(title='Horizontal Break (z)', range=[-2, 2]),
-                aspectratio=dict(x=2, y=1, z=1),
-                camera=dict(eye=dict(x=-2, y=0, z=1.5))
-            )
+                xaxis=dict(title='X (Distance to Catcher)', range=[0, 20], showgrid=False, zeroline=False, showbackground=False),
+                yaxis=dict(title='Y (Height)', range=[0, 2.5], showgrid=False, zeroline=False, showbackground=False),
+                zaxis=dict(title='Z (Horizontal Break)', range=[-2.5, 2.5], showgrid=False, zeroline=False, showbackground=False),
+                aspectmode="manual",
+                aspectratio=dict(x=5, y=2, z=2),
+                camera=camera_views["Side View"]
+            ),
+            updatemenus=[
+                dict(type="buttons", direction="right", x=0.1, y=1.2, buttons=buttons)
+            ],
+            paper_bgcolor="white",
+            plot_bgcolor="white"
         )
 
-        fig = go.Figure(data=[trace_traj] + strike_traces, layout=layout)
+        fig = go.Figure(data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], layout=layout)
 
-        # ─── Save HTML ───
         os.makedirs("static", exist_ok=True)
         file_path = os.path.join("static", "pitch_result.html")
-        pio.write_html(fig, file_path)
+        pio.write_html(fig, file_path, full_html=True)
 
-        return "static/pitch_result.html", {"y": round(fy, 2), "z": round(fz, 2)}
+        return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
 
     except Exception as e:
         return None, {"error": str(e)}
