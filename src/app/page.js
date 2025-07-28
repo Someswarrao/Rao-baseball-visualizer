@@ -1,24 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Card, CardContent,
-  Button, Input, Tooltip, Spinner
-} from "@/components/ui"; // Imaginary wrappers (replace with your actual ones)
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-
-// Helper for tooltips — adapt to your UI lib
-const Info = ({ tip }) => (
-  <Tooltip>
-    <span className="ml-2 text-blue-500 cursor-pointer" tabIndex={0}>ⓘ
-      <span className="tooltip-text">{tip}</span>
-    </span>
-  </Tooltip>
-);
 
 export default function BaseballPitchApp() {
   const [pitchData, setPitchData] = useState({
@@ -27,17 +8,13 @@ export default function BaseballPitchApp() {
     spinRate: "2300", initialVelocity: "83", velocityUnit: "km/h",
     theta: "0", phi: "0",
   });
-  const [angleError, setAngleError] = useState("");
   const [validation, setValidation] = useState({});
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [generalError, setGeneralError] = useState("");
 
-  // Responsive: Use flex-col on small screens
-  const inputClass =
-    "rounded border px-2 py-1 w-full" +
-    (angleError ? " border-red-500" : "");
-
+  // Helper for validation
   const fieldValidate = (field, value) => {
     let err = "";
     if (field === "theta" || field === "phi") {
@@ -46,9 +23,7 @@ export default function BaseballPitchApp() {
         err = `${field.toUpperCase()} must be between -90° and 90°`;
       }
     }
-    if (
-      ["releaseX", "releaseY", "releaseZ", "spinRate", "initialVelocity"].includes(field)
-    ) {
+    if (["releaseX", "releaseY", "releaseZ", "spinRate", "initialVelocity"].includes(field)) {
       if (value === "" || isNaN(Number(value))) {
         err = `${field} must be a number`;
       }
@@ -62,21 +37,17 @@ export default function BaseballPitchApp() {
     fieldValidate(field, value);
   };
 
-  // Helper
   const isValidForm = () => {
     for (const [field, err] of Object.entries(validation)) if (err) return false;
-    for (const field of [
-        "pitcher", "pitchType", "releaseX", "releaseY", "releaseZ",
-        "spinRate", "initialVelocity", "theta", "phi"
-      ]) {
-      if (pitchData[field] === "" || (["theta", "phi"].includes(field) && isNaN(Number(pitchData[field]))))
-        return false;
+    for (const field of ["pitcher", "pitchType", "releaseX", "releaseY", "releaseZ", "spinRate", "initialVelocity", "theta", "phi"]) {
+      if (pitchData[field] === "" || (["theta", "phi"].includes(field) && isNaN(Number(pitchData[field])))) return false;
     }
     return true;
   };
 
   const handleSubmit = async () => {
-    // Validate all on submit
+    setGeneralError("");
+    // Validate on submit
     let localErr = {};
     for (const field in pitchData) localErr[field] = fieldValidate(field, pitchData[field]);
     setValidation(localErr);
@@ -109,19 +80,18 @@ export default function BaseballPitchApp() {
       if (!res.ok) throw new Error("Failed to fetch from backend.");
       const data = await res.json();
       setResult(data);
-      // Add to history
       setHistory((h) => [{ ...payload, ...data, date: new Date() }, ...h]);
       setLoading(false);
     } catch (err) {
-      setAngleError("Error calling the simulation backend.");
+      setGeneralError("Error calling the simulation backend.");
       setLoading(false);
     }
   };
 
   return (
     <div className="max-w-md mx-auto p-2 md:p-4">
-      <Card className="rounded-2xl shadow-lg w-full">
-        <CardContent className="flex flex-col space-y-4">
+      <div className="bg-white rounded-2xl shadow-lg w-full">
+        <div className="p-4 flex flex-col space-y-4">
           <h2 className="text-xl font-bold text-center">
             Baseball Pitch Visualization
           </h2>
@@ -130,97 +100,73 @@ export default function BaseballPitchApp() {
           <div className="flex flex-col space-y-3">
             <label>
               Pitcher
-              <Info tip="Pitcher’s throwing hand: Left (LHP) or Right (RHP)." />
+              <span title="Pitcher’s throwing hand: Left (LHP) or Right (RHP)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
             </label>
-            <Select
+            <select className="rounded border px-2 py-1"
               value={pitchData.pitcher}
-              onValueChange={(val) => handleChange("pitcher", val)}
-            >
-              <SelectTrigger>{pitchData.pitcher}</SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LHP">LHP</SelectItem>
-                <SelectItem value="RHP">RHP</SelectItem>
-              </SelectContent>
-            </Select>
-
+              onChange={e => handleChange("pitcher", e.target.value)}>
+              <option value="LHP">LHP</option>
+              <option value="RHP">RHP</option>
+            </select>
             <label>
               Pitch Type
-              <Info tip="Select Fastball, Slider or Curveball." />
+              <span title="Select Fastball, Slider or Curveball." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
             </label>
-            <Select
+            <select className="rounded border px-2 py-1"
               value={pitchData.pitchType}
-              onValueChange={(val) => handleChange("pitchType", val)}
-            >
-              <SelectTrigger>{pitchData.pitchType}</SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fastball">Fastball</SelectItem>
-                <SelectItem value="Slider">Slider</SelectItem>
-                <SelectItem value="Curveball">Curveball</SelectItem>
-              </SelectContent>
-            </Select>
-
+              onChange={e => handleChange("pitchType", e.target.value)}>
+              <option>Fastball</option>
+              <option>Slider</option>
+              <option>Curveball</option>
+            </select>
             <label>
               Release Position (X, Y, Z)
-              <Info tip="Release point in meters from mound center (X), height above ground (Y), side offset (Z)." />
+              <span title="Release point in meters from mound center (X), height above ground (Y), side offset (Z)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
             </label>
             <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
-              <Input
-                className={validation.releaseX ? "border-red-500" : ""}
+              <input className={"rounded border px-2 py-1 w-full" + (validation.releaseX ? " border-red-500" : "")}
                 value={pitchData.releaseX}
                 onChange={e => handleChange("releaseX", e.target.value)}
-                placeholder="X"
-              />
-              <Input
-                className={validation.releaseY ? "border-red-500" : ""}
+                placeholder="X" />
+              <input className={"rounded border px-2 py-1 w-full" + (validation.releaseY ? " border-red-500" : "")}
                 value={pitchData.releaseY}
                 onChange={e => handleChange("releaseY", e.target.value)}
-                placeholder="Y"
-              />
-              <Input
-                className={validation.releaseZ ? "border-red-500" : ""}
+                placeholder="Y" />
+              <input className={"rounded border px-2 py-1 w-full" + (validation.releaseZ ? " border-red-500" : "")}
                 value={pitchData.releaseZ}
                 onChange={e => handleChange("releaseZ", e.target.value)}
-                placeholder="Z"
-              />
+                placeholder="Z" />
             </div>
-            <FormError msg={validation.releaseX || validation.releaseY || validation.releaseZ} />
+            {["releaseX", "releaseY", "releaseZ"].map(f => validation[f] && <FormError key={f} msg={validation[f]} />)}
 
             <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
               <div className="w-full">
                 <label>
                   Spin Rate (rpm)
-                  <Info tip="How fast the ball spins (revolutions per minute)." />
+                  <span title="How fast the ball spins (revolutions per minute)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
-                <Input
-                  className={validation.spinRate ? "border-red-500" : ""}
+                <input className={"rounded border px-2 py-1 w-full" + (validation.spinRate ? " border-red-500" : "")}
                   value={pitchData.spinRate}
                   onChange={e => handleChange("spinRate", e.target.value)}
                 />
-                <FormError msg={validation.spinRate} />
+                {validation.spinRate && <FormError msg={validation.spinRate} />}
               </div>
               <div className="w-full">
                 <label>
                   Initial Velocity
-                  <Info tip="Pitch speed (km/h or mph). Change unit as needed." />
+                  <span title="Pitch speed (km/h or mph)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
-                <Input
-                  className={validation.initialVelocity ? "border-red-500" : ""}
+                <input className={"rounded border px-2 py-1 w-full" + (validation.initialVelocity ? " border-red-500" : "")}
                   value={pitchData.initialVelocity}
-                  onChange={e =>
-                    handleChange("initialVelocity", e.target.value)
-                  }
+                  onChange={e => handleChange("initialVelocity", e.target.value)}
                 />
-                <Select
+                <select className="rounded border px-2 py-1 mt-1"
                   value={pitchData.velocityUnit}
-                  onValueChange={(val) => handleChange("velocityUnit", val)}
-                >
-                  <SelectTrigger>{pitchData.velocityUnit}</SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="km/h">km/h</SelectItem>
-                    <SelectItem value="mph">mph</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormError msg={validation.initialVelocity} />
+                  onChange={e => handleChange("velocityUnit", e.target.value)}>
+                  <option value="km/h">km/h</option>
+                  <option value="mph">mph</option>
+                </select>
+                {validation.initialVelocity && <FormError msg={validation.initialVelocity} />}
               </div>
             </div>
 
@@ -228,10 +174,9 @@ export default function BaseballPitchApp() {
               <div className="w-full">
                 <label>
                   Theta (°)
-                  <Info tip="Vertical launch angle: -90 (down) to 90 (up)." />
+                  <span title="Vertical launch angle: -90 (down) to 90 (up)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
-                <Input
-                  className={validation.theta ? "border-red-500" : ""}
+                <input className={"rounded border px-2 py-1 w-full" + (validation.theta ? " border-red-500" : "")}
                   value={pitchData.theta}
                   onChange={e => handleChange("theta", e.target.value)}
                 />
@@ -239,15 +184,14 @@ export default function BaseballPitchApp() {
                   θ (Theta): Vertical launch angle.<br />
                   Range: -90° to 90°
                 </p>
-                <FormError msg={validation.theta} />
+                {validation.theta && <FormError msg={validation.theta} />}
               </div>
               <div className="w-full">
                 <label>
                   Phi (°)
-                  <Info tip="Horizontal angle: -90 (left) to 90 (right)." />
+                  <span title="Horizontal angle: -90 (left) to 90 (right)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
-                <Input
-                  className={validation.phi ? "border-red-500" : ""}
+                <input className={"rounded border px-2 py-1 w-full" + (validation.phi ? " border-red-500" : "")}
                   value={pitchData.phi}
                   onChange={e => handleChange("phi", e.target.value)}
                 />
@@ -255,23 +199,20 @@ export default function BaseballPitchApp() {
                   ϕ (Phi): Lateral deviation angle.<br />
                   Range: -90° to 90°
                 </p>
-                <FormError msg={validation.phi} />
+                {validation.phi && <FormError msg={validation.phi} />}
               </div>
             </div>
 
-            {/* Loading state or submit button */}
-            {angleError && <p className="text-red-500 text-sm">{angleError}</p>}
-            <Button
+            {generalError && <p className="text-red-500 text-sm">{generalError}</p>}
+            <button
               onClick={handleSubmit}
-              className={`w-full mt-4 ${loading ? "opacity-60" : ""}`}
+              className={`w-full mt-4 bg-blue-600 text-white py-2 rounded ${loading ? "opacity-60" : ""}`}
               disabled={loading || !isValidForm()}
             >
-              {loading ? (<>
-                  <Spinner className="mr-2" size={18} /> Simulating...
-                </>) : "Submit"}
-            </Button>
+              {loading ? (<span>⏳ Simulating...</span>) : "Submit"}
+            </button>
 
-            {/* Result display: show result below form */}
+            {/* Result display */}
             {result && (
               <div className="mt-4 p-4 rounded bg-blue-50 border">
                 <b>Pitch Result:</b><br />
@@ -294,11 +235,10 @@ export default function BaseballPitchApp() {
                   {history.slice(0, 5).map((h, i) => (
                     <li key={i} className="border-b text-xs py-1 flex flex-col md:flex-row md:items-center gap-1">
                       <span>
-                        <b>{h.pitcher}</b>·{h.pitchType}&nbsp;
-                        Speed: {pitchData.velocityUnit === "km/h"
+                        <b>{h.pitcher}</b>·{h.pitchType} · Speed: {pitchData.velocityUnit === "km/h"
                           ? (parseFloat(h.initialVelocity) * 3.6).toFixed(1) + " km/h"
                           : (parseFloat(h.initialVelocity) / 0.44704).toFixed(1) + " mph"}
-                        · Θ={h.theta}° Φ={h.phi}°
+                         · Θ={h.theta}° Φ={h.phi}°
                         <br />
                         Result Y={h.finalPosition && h.finalPosition.y}, Z={h.finalPosition && h.finalPosition.z}
                       </span>
@@ -312,15 +252,13 @@ export default function BaseballPitchApp() {
                 </ul>
               </div>
             )}
-
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-// Short helper for inline error display (can style as needed)
 function FormError({ msg }) {
   return msg ? (<div className="text-xs text-red-500">{msg}</div>) : null;
 }
