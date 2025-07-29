@@ -11,7 +11,7 @@ app = FastAPI()
 # ───── CORS Middleware ─────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # Change this to frontend domain in production
+    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # Update for your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,11 +32,16 @@ class PitchRequest(BaseModel):
 # ───── Simulation Route ─────
 @app.post("/simulate")
 async def simulate_pitch(pitch: PitchRequest):
-    html_file, final_position = run_simulation(pitch.dict())
+    # Updated to unpack 3 values returned by run_simulation
+    html_file, png_file, final_position = run_simulation(pitch.dict())
+
     if not html_file:
-        return JSONResponse(status_code=500, content=final_position)
+        return JSONResponse(status_code=500, content=final_position)  # final_position may contain error info
+
+    # Return the new png_file key alongside htmlFile and finalPosition
     return {
-        "htmlFile": html_file,  # e.g., static/pitch_result.html
+        "htmlFile": html_file,        # e.g., static/pitch_result.html
+        "pngFile": png_file,          # e.g., static/pitch_result.png
         "finalPosition": final_position
     }
 
