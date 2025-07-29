@@ -88,8 +88,6 @@ def run_simulation(pitch_data):
             name='Trajectory'
         )
 
-        # Strike zone + visuals remain same...
-
         sz_top, sz_bottom = 1.0, 0.6
         sz_left, sz_right = -0.2159, 0.2159
         strike_zone_lines = [
@@ -117,6 +115,15 @@ def run_simulation(pitch_data):
             name='Home Plate'
         )
 
+        def wall_surface(x, y, z):
+            return go.Surface(
+                x=x, y=y, z=z,
+                surfacecolor=[[0, 1], [0, 1]],
+                colorscale=[[0, 'green'], [1, 'green']],
+                opacity=0.4,
+                showscale=False,
+            )
+
         xz_plane = go.Surface(
             x=[[0, 20], [0, 20]],
             y=[[0, 0], [0, 0]],
@@ -127,15 +134,6 @@ def run_simulation(pitch_data):
             showscale=False,
             name='Dirt Ground'
         )
-
-        def wall_surface(x, y, z):
-            return go.Surface(
-                x=x, y=y, z=z,
-                surfacecolor=[[0, 1], [0, 1]],
-                colorscale=[[0, 'green'], [1, 'green']],
-                opacity=0.4,
-                showscale=False,
-            )
 
         yz_right = wall_surface([[20.001, 20.001], [20.001, 20.001]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
         yz_left = wall_surface([[0, 0], [0, 0]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
@@ -166,7 +164,7 @@ def run_simulation(pitch_data):
                 zaxis=dict(title='Z (Horizontal Break)', range=[-2.5, 2.5], showgrid=False, zeroline=False, showbackground=False),
                 aspectmode="manual",
                 aspectratio=dict(x=5, y=2, z=2),
-                camera=camera_views["Side View"]
+                camera=camera_views["Side View"]  # Set side view as default for HTML output
             ),
             updatemenus=[
                 dict(type="buttons", direction="right", x=0.1, y=1.2, buttons=buttons)
@@ -175,13 +173,30 @@ def run_simulation(pitch_data):
             plot_bgcolor="white"
         )
 
-        fig = go.Figure(data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], layout=layout)
+        fig = go.Figure(
+            data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], 
+            layout=layout
+        )
 
         os.makedirs("static", exist_ok=True)
-        file_path = os.path.join("static", "pitch_result.html")
-        pio.write_html(fig, file_path, full_html=True)
+        html_file_path = os.path.join("static", "pitch_result.html")
+        pio.write_html(fig, html_file_path, full_html=True)
 
-        return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
+        # Save a static PNG in Diagonal View for mobile preview
+        fig.update_layout(scene_camera=camera_views["Diagonal View"])
+        png_file_path = os.path.join("static", "pitch_result.png")
+        try:
+            pio.write_image(fig, png_file_path, format="png", scale=2)
+        except Exception as e:
+            # If Kaleido is not installed, PNG won't generate. Warn but don't fail.
+            png_file_path = None
+
+        # Return both html and png file names (without local "static/" if your frontend expects relative path)
+        return (
+            html_file_path,                                              # static/pitch_result.html
+            os.path.basename(png_file_path) if png_file_path else None,  # pitch_result.png
+            {"y": round(fy, 2), "z": round(fz, 2)}
+        )
 
     except Exception as e:
-        return None, {"error": str(e)}
+        return None, None, {"error": str(e)}
