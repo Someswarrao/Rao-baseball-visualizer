@@ -164,7 +164,7 @@ def run_simulation(pitch_data):
                 zaxis=dict(title='Z (Horizontal Break)', range=[-2.5, 2.5], showgrid=False, zeroline=False, showbackground=False),
                 aspectmode="manual",
                 aspectratio=dict(x=5, y=2, z=2),
-                camera=camera_views["Side View"]  # Set side view as default for HTML output
+                camera=camera_views["Side View"]
             ),
             updatemenus=[
                 dict(type="buttons", direction="right", x=0.1, y=1.2, buttons=buttons)
@@ -174,29 +174,33 @@ def run_simulation(pitch_data):
         )
 
         fig = go.Figure(
-            data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], 
+            data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front],
             layout=layout
         )
 
         os.makedirs("static", exist_ok=True)
         html_file_path = os.path.join("static", "pitch_result.html")
         pio.write_html(fig, html_file_path, full_html=True)
+        print("HTML successfully saved at:", html_file_path)
 
-        # Save a static PNG in Diagonal View for mobile preview
+        # ----  Save a static PNG in Diagonal View for mobile preview  ----
         fig.update_layout(scene_camera=camera_views["Diagonal View"])
         png_file_path = os.path.join("static", "pitch_result.png")
+
         try:
+            print("Attempting to save PNG for preview at:", png_file_path)
             pio.write_image(fig, png_file_path, format="png", scale=2)
+            print("PNG successfully saved at:", png_file_path)
         except Exception as e:
-            # If Kaleido is not installed, PNG won't generate. Warn but don't fail.
+            print("PNG export failed:", e)
             png_file_path = None
 
-        # Return both html and png file names (without local "static/" if your frontend expects relative path)
         return (
-            html_file_path,                                              # static/pitch_result.html
-            os.path.basename(png_file_path) if png_file_path else None,  # pitch_result.png
+            html_file_path,                                   # e.g. static/pitch_result.html
+            "static/pitch_result.png" if png_file_path else None,  # frontend expects full static path!
             {"y": round(fy, 2), "z": round(fz, 2)}
         )
 
     except Exception as e:
+        print("Simulation error:", e)
         return None, None, {"error": str(e)}
