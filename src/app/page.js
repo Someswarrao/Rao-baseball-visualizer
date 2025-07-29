@@ -22,13 +22,14 @@ export default function BaseballPitchApp() {
   const [generalError, setGeneralError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
+  // Detect mobile device once on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
     }
   }, []);
 
-  // Validation helper
+  // Field validation helper
   const fieldValidate = (field, value) => {
     let err = "";
     if (field === "theta" || field === "phi") {
@@ -82,6 +83,7 @@ export default function BaseballPitchApp() {
     setLoading(true);
     setResult(null);
 
+    // Convert velocity to m/s for backend
     const velocityInMs =
       pitchData.velocityUnit === "km/h"
         ? (parseFloat(pitchData.initialVelocity) / 3.6).toFixed(2)
@@ -104,8 +106,8 @@ export default function BaseballPitchApp() {
       });
       if (!res.ok) throw new Error("Failed to fetch from backend.");
       const data = await res.json();
-      // Expect data to have htmlFile, pngFile, finalPosition
-      
+
+      // Backend response should have htmlFile, pngFile, finalPosition keys
       setResult(data);
       setHistory((h) => [{ ...payload, ...data, date: new Date() }, ...h]);
       setLoading(false);
@@ -126,11 +128,13 @@ export default function BaseballPitchApp() {
             className="rounded mx-auto w-full md:w-3/4"
           />
 
-          {/* Form */}
+          {/* ==== Form ==== */}
           <div className="flex flex-col space-y-3">
             <label>
               Pitcher
-              <span title="Pitcher’s throwing hand: Left (LHP) or Right (RHP)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
+              <span title="Pitcher’s throwing hand: Left (LHP) or Right (RHP)." className="ml-1 text-blue-700 cursor-pointer">
+                ⓘ
+              </span>
             </label>
             <select
               className="rounded border px-2 py-1"
@@ -161,19 +165,25 @@ export default function BaseballPitchApp() {
             </label>
             <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
               <input
-                className={"rounded border px-2 py-1 w-full" + (validation.releaseX ? " border-red-500" : "")}
+                className={
+                  "rounded border px-2 py-1 w-full" + (validation.releaseX ? " border-red-500" : "")
+                }
                 value={pitchData.releaseX}
                 onChange={(e) => handleChange("releaseX", e.target.value)}
                 placeholder="X"
               />
               <input
-                className={"rounded border px-2 py-1 w-full" + (validation.releaseY ? " border-red-500" : "")}
+                className={
+                  "rounded border px-2 py-1 w-full" + (validation.releaseY ? " border-red-500" : "")
+                }
                 value={pitchData.releaseY}
                 onChange={(e) => handleChange("releaseY", e.target.value)}
                 placeholder="Y"
               />
               <input
-                className={"rounded border px-2 py-1 w-full" + (validation.releaseZ ? " border-red-500" : "")}
+                className={
+                  "rounded border px-2 py-1 w-full" + (validation.releaseZ ? " border-red-500" : "")
+                }
                 value={pitchData.releaseZ}
                 onChange={(e) => handleChange("releaseZ", e.target.value)}
                 placeholder="Z"
@@ -190,7 +200,9 @@ export default function BaseballPitchApp() {
                   <span title="How fast the ball spins (revolutions per minute)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
                 <input
-                  className={"rounded border px-2 py-1 w-full" + (validation.spinRate ? " border-red-500" : "")}
+                  className={
+                    "rounded border px-2 py-1 w-full" + (validation.spinRate ? " border-red-500" : "")
+                  }
                   value={pitchData.spinRate}
                   onChange={(e) => handleChange("spinRate", e.target.value)}
                 />
@@ -199,10 +211,14 @@ export default function BaseballPitchApp() {
               <div className="w-full">
                 <label>
                   Initial Velocity
-                  <span title="Pitch speed (km/h or mph)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
+                  <span title="Pitch speed (km/h or mph)." className="ml-1 text-blue-700 cursor-pointer">
+                    ⓘ
+                  </span>
                 </label>
                 <input
-                  className={"rounded border px-2 py-1 w-full" + (validation.initialVelocity ? " border-red-500" : "")}
+                  className={
+                    "rounded border px-2 py-1 w-full" + (validation.initialVelocity ? " border-red-500" : "")
+                  }
                   value={pitchData.initialVelocity}
                   onChange={(e) => handleChange("initialVelocity", e.target.value)}
                 />
@@ -225,7 +241,9 @@ export default function BaseballPitchApp() {
                   <span title="Vertical launch angle: -90 (down) to 90 (up)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
                 <input
-                  className={"rounded border px-2 py-1 w-full" + (validation.theta ? " border-red-500" : "")}
+                  className={
+                    "rounded border px-2 py-1 w-full" + (validation.theta ? " border-red-500" : "")
+                  }
                   value={pitchData.theta}
                   onChange={(e) => handleChange("theta", e.target.value)}
                 />
@@ -242,7 +260,9 @@ export default function BaseballPitchApp() {
                   <span title="Horizontal angle: -90 (left) to 90 (right)." className="ml-1 text-blue-700 cursor-pointer">ⓘ</span>
                 </label>
                 <input
-                  className={"rounded border px-2 py-1 w-full" + (validation.phi ? " border-red-500" : "")}
+                  className={
+                    "rounded border px-2 py-1 w-full" + (validation.phi ? " border-red-500" : "")
+                  }
                   value={pitchData.phi}
                   onChange={(e) => handleChange("phi", e.target.value)}
                 />
@@ -256,17 +276,21 @@ export default function BaseballPitchApp() {
             </div>
           </div>
 
-          {generalError && <p className="text-red-500 text-sm">{generalError}</p>}
+          {generalError && (
+            <p className="text-red-500 text-sm">{generalError}</p>
+          )}
 
           <button
             onClick={handleSubmit}
-            className={`w-full mt-4 bg-blue-600 text-white py-2 rounded ${loading ? "opacity-60" : ""}`}
+            className={`w-full mt-4 bg-blue-600 text-white py-2 rounded ${
+              loading ? "opacity-60" : ""
+            }`}
             disabled={loading || !isValidForm()}
           >
             {loading ? <span>⏳ Simulating...</span> : "Submit"}
           </button>
 
-          {/* Result display */}
+          {/* ==== Result display ==== */}
           {result && (
             <div className="mt-4 p-4 rounded bg-blue-50 border">
               <b>Pitch Result:</b>
@@ -277,7 +301,6 @@ export default function BaseballPitchApp() {
               <br />
               {isMobile ? (
                 <>
-                  {/* Show static PNG on mobile */}
                   {result.pngFile ? (
                     <img
                       src={`https://rao-baseball-visualizer.onrender.com/${result.pngFile}`}
@@ -285,7 +308,9 @@ export default function BaseballPitchApp() {
                       className="w-full rounded my-2"
                     />
                   ) : (
-                    <p className="text-sm italic text-gray-500">Preview image not available</p>
+                    <p className="text-sm italic text-gray-500">
+                      Preview image not available
+                    </p>
                   )}
                   <button
                     className="bg-blue-600 text-white px-3 py-1 rounded"
@@ -312,7 +337,7 @@ export default function BaseballPitchApp() {
             </div>
           )}
 
-          {/* Pitch history */}
+          {/* ==== Pitch History ==== */}
           {history.length > 0 && (
             <div className="mt-6">
               <b>Pitch History</b>
