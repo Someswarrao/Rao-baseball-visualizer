@@ -6,8 +6,8 @@ import os
 
 def run_simulation(pitch_data):
     try:
-        required = ["handedness", "initialVelocity", "spinRate", "releasePosition", "theta", "phi"]
-        for key in required:
+        required_keys = ["handedness", "initialVelocity", "spinRate", "releasePosition", "theta", "phi"]
+        for key in required_keys:
             if key not in pitch_data:
                 raise ValueError(f"Missing input: {key}")
 
@@ -142,7 +142,6 @@ def run_simulation(pitch_data):
         camera_views = {
             "Side View": dict(eye=dict(x=9, y=1.2, z=6), up=dict(x=0, y=1, z=0)),
         }
-
         buttons = [
             dict(label=name, method="relayout", args=[{"scene.camera": view}])
             for name, view in camera_views.items()
@@ -175,10 +174,7 @@ def run_simulation(pitch_data):
         os.makedirs("static", exist_ok=True)
         html_file_path = os.path.join("static", "pitch_result.html")
         pio.write_html(fig, html_file_path, full_html=True)
-        print("HTML successfully saved at:", html_file_path)
 
         return html_file_path, {"y": round(fy, 2), "z": round(fz, 2)}
-
     except Exception as e:
-        print("Simulation error:", e)
         return None, {"error": str(e)}
