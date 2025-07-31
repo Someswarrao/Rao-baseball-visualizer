@@ -139,9 +139,17 @@ def run_simulation(pitch_data):
         yz_left = wall_surface([[0, 0], [0, 0]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
         xz_front = wall_surface([[0, 20], [0, 20]], [[0, 2.5], [0, 2.5]], [[2.5, 2.5], [2.5, 2.5]])
 
+        # --- All custom camera views as in your UI ---
         camera_views = {
-            "Side View": dict(eye=dict(x=9, y=1.2, z=6), up=dict(x=0, y=1, z=0)),
+            "Side View":      dict(eye=dict(x=9, y=1.2, z=6),   up=dict(x=0, y=1, z=0)),
+            "Catcher View":   dict(eye=dict(x=18.4, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
+            "Pitcher View":   dict(eye=dict(x=-10, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
+            "Top View":       dict(eye=dict(x=9, y=12, z=0), up=dict(x=0, y=0, z=1)),
+            "Diagonal View":  dict(eye=dict(x=15, y=4, z=4), up=dict(x=0, y=1, z=0)),
+            "Umpire View":    dict(eye=dict(x=18.3, y=1.5, z=0.2), up=dict(x=0, y=1, z=0)),
+            "Mobile Tilt":    dict(eye=dict(x=18, y=2, z=1.2), up=dict(x=0, y=1, z=0)),
         }
+
         buttons = [
             dict(label=name, method="relayout", args=[{"scene.camera": view}])
             for name, view in camera_views.items()
@@ -172,9 +180,10 @@ def run_simulation(pitch_data):
         )
 
         os.makedirs("static", exist_ok=True)
-        html_file_path = os.path.join("static", "pitch_result.html")
-        pio.write_html(fig, html_file_path, full_html=True)
+        file_path = os.path.join("static", "pitch_result.html")
+        pio.write_html(fig, file_path, full_html=True)
 
-        return html_file_path, {"y": round(fy, 2), "z": round(fz, 2)}
+        return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
+
     except Exception as e:
         return None, {"error": str(e)}
