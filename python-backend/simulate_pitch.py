@@ -6,8 +6,8 @@ import os
 
 def run_simulation(pitch_data):
     try:
-        required_keys = ["handedness", "initialVelocity", "spinRate", "releasePosition", "theta", "phi"]
-        for key in required_keys:
+        required = ["handedness", "initialVelocity", "spinRate", "releasePosition", "theta", "phi"]
+        for key in required:
             if key not in pitch_data:
                 raise ValueError(f"Missing input: {key}")
 
@@ -88,8 +88,6 @@ def run_simulation(pitch_data):
             name='Trajectory'
         )
 
-        # Strike zone + visuals remain same...
-
         sz_top, sz_bottom = 1.0, 0.6
         sz_left, sz_right = -0.2159, 0.2159
         strike_zone_lines = [
@@ -117,6 +115,15 @@ def run_simulation(pitch_data):
             name='Home Plate'
         )
 
+        def wall_surface(x, y, z):
+            return go.Surface(
+                x=x, y=y, z=z,
+                surfacecolor=[[0, 1], [0, 1]],
+                colorscale=[[0, 'green'], [1, 'green']],
+                opacity=0.4,
+                showscale=False,
+            )
+
         xz_plane = go.Surface(
             x=[[0, 20], [0, 20]],
             y=[[0, 0], [0, 0]],
@@ -128,27 +135,12 @@ def run_simulation(pitch_data):
             name='Dirt Ground'
         )
 
-        def wall_surface(x, y, z):
-            return go.Surface(
-                x=x, y=y, z=z,
-                surfacecolor=[[0, 1], [0, 1]],
-                colorscale=[[0, 'green'], [1, 'green']],
-                opacity=0.4,
-                showscale=False,
-            )
-
         yz_right = wall_surface([[20.001, 20.001], [20.001, 20.001]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
         yz_left = wall_surface([[0, 0], [0, 0]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
         xz_front = wall_surface([[0, 20], [0, 20]], [[0, 2.5], [0, 2.5]], [[2.5, 2.5], [2.5, 2.5]])
 
         camera_views = {
             "Side View": dict(eye=dict(x=9, y=1.2, z=6), up=dict(x=0, y=1, z=0)),
-            "Catcher View": dict(eye=dict(x=18.4, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
-            "Pitcher View": dict(eye=dict(x=-10, y=1.4, z=0), up=dict(x=0, y=1, z=0)),
-            "Top View": dict(eye=dict(x=9, y=12, z=0), up=dict(x=0, y=0, z=1)),
-            "Diagonal View": dict(eye=dict(x=15, y=4, z=4), up=dict(x=0, y=1, z=0)),
-            "Umpire View": dict(eye=dict(x=18.3, y=1.5, z=0.2), up=dict(x=0, y=1, z=0)),
-            "Mobile Tilt": dict(eye=dict(x=18, y=2, z=1.2), up=dict(x=0, y=1, z=0)),
         }
 
         buttons = [
@@ -175,13 +167,18 @@ def run_simulation(pitch_data):
             plot_bgcolor="white"
         )
 
-        fig = go.Figure(data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], layout=layout)
+        fig = go.Figure(
+            data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front],
+            layout=layout
+        )
 
         os.makedirs("static", exist_ok=True)
-        file_path = os.path.join("static", "pitch_result.html")
-        pio.write_html(fig, file_path, full_html=True)
+        html_file_path = os.path.join("static", "pitch_result.html")
+        pio.write_html(fig, html_file_path, full_html=True)
+        print("HTML successfully saved at:", html_file_path)
 
-        return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
+        return html_file_path, {"y": round(fy, 2), "z": round(fz, 2)}
 
     except Exception as e:
+        print("Simulation error:", e)
         return None, {"error": str(e)}
