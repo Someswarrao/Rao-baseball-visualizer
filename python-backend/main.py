@@ -8,19 +8,19 @@ import os
 
 app = FastAPI()
 
-# ───── CORS Middleware ─────
+# CORS Middleware — update origins for your frontend here
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # Update for your frontend domain
+    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # adjust as needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ───── Serve Static Files ─────
+# Serve static files from 'static' directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# ───── Input Schema ─────
+# Input schema
 class PitchRequest(BaseModel):
     handedness: str
     initialVelocity: str
@@ -29,23 +29,22 @@ class PitchRequest(BaseModel):
     theta: str
     phi: str
 
-# ───── Simulation Route ─────
 @app.post("/simulate")
 async def simulate_pitch(pitch: PitchRequest):
-    # Updated to unpack 3 values returned by run_simulation
-    html_file, png_file, final_position = run_simulation(pitch.dict())
+    try:
+        html_file, png_file, final_position = run_simulation(pitch.dict())
+        if not html_file:
+            return JSONResponse(status_code=500, content=final_position)
+        return {
+            "htmlFile": html_file,
+            "pngFile": png_file,
+            "finalPosition": final_position
+        }
+    except Exception as e:
+        # Unexpected internal error
+        return JSONResponse(status_code=500, content={"error": f"Internal server error: {e}"})
 
-    if not html_file:
-        return JSONResponse(status_code=500, content=final_position)  # final_position may contain error info
-
-    # Return the new png_file key alongside htmlFile and finalPosition
-    return {
-        "htmlFile": html_file,        # e.g., static/pitch_result.html
-        "pngFile": png_file,          # e.g., static/pitch_result.png
-        "finalPosition": final_position
-    }
-
-# ───── Root Route for Health Check (HEAD + GET) ─────
+# Root healthcheck endpoint
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root(request: Request):
     return JSONResponse(content={"message": "✅ Baseball simulation backend is running"})
