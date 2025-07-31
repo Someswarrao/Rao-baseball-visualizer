@@ -8,19 +8,19 @@ import os
 
 app = FastAPI()
 
-# CORS Middleware — update origins for your frontend here
+# ───── CORS Middleware ─────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # adjust as needed
+    allow_origins=["https://rao-baseball-visualizer.vercel.app"],  # Update for your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve static files from 'static' directory
+# ───── Serve Static Files ─────
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Input schema
+# ───── Input Schema ─────
 class PitchRequest(BaseModel):
     handedness: str
     initialVelocity: str
@@ -29,22 +29,21 @@ class PitchRequest(BaseModel):
     theta: str
     phi: str
 
+# ───── Simulation Route ─────
 @app.post("/simulate")
 async def simulate_pitch(pitch: PitchRequest):
     try:
-        html_file, png_file, final_position = run_simulation(pitch.dict())
+        html_file, final_position = run_simulation(pitch.dict())
         if not html_file:
             return JSONResponse(status_code=500, content=final_position)
         return {
-            "htmlFile": html_file,
-            "pngFile": png_file,
+            "htmlFile": html_file,  # e.g., static/pitch_result.html
             "finalPosition": final_position
         }
     except Exception as e:
-        # Unexpected internal error
         return JSONResponse(status_code=500, content={"error": f"Internal server error: {e}"})
 
-# Root healthcheck endpoint
+# ───── Root Route for Health Check (HEAD + GET) ─────
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root(request: Request):
     return JSONResponse(content={"message": "✅ Baseball simulation backend is running"})

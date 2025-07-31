@@ -88,6 +88,8 @@ def run_simulation(pitch_data):
             name='Trajectory'
         )
 
+        # Strike zone + visuals remain same...
+
         sz_top, sz_bottom = 1.0, 0.6
         sz_left, sz_right = -0.2159, 0.2159
         strike_zone_lines = [
@@ -115,15 +117,6 @@ def run_simulation(pitch_data):
             name='Home Plate'
         )
 
-        def wall_surface(x, y, z):
-            return go.Surface(
-                x=x, y=y, z=z,
-                surfacecolor=[[0, 1], [0, 1]],
-                colorscale=[[0, 'green'], [1, 'green']],
-                opacity=0.4,
-                showscale=False,
-            )
-
         xz_plane = go.Surface(
             x=[[0, 20], [0, 20]],
             y=[[0, 0], [0, 0]],
@@ -134,6 +127,15 @@ def run_simulation(pitch_data):
             showscale=False,
             name='Dirt Ground'
         )
+
+        def wall_surface(x, y, z):
+            return go.Surface(
+                x=x, y=y, z=z,
+                surfacecolor=[[0, 1], [0, 1]],
+                colorscale=[[0, 'green'], [1, 'green']],
+                opacity=0.4,
+                showscale=False,
+            )
 
         yz_right = wall_surface([[20.001, 20.001], [20.001, 20.001]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
         yz_left = wall_surface([[0, 0], [0, 0]], [[0, 2.5], [0, 2.5]], [[-2.5, -2.5], [2.5, 2.5]])
@@ -173,34 +175,13 @@ def run_simulation(pitch_data):
             plot_bgcolor="white"
         )
 
-        fig = go.Figure(
-            data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front],
-            layout=layout
-        )
+        fig = go.Figure(data=[trace_traj] + strike_traces + [home_plate, xz_plane, yz_right, yz_left, xz_front], layout=layout)
 
         os.makedirs("static", exist_ok=True)
-        html_file_path = os.path.join("static", "pitch_result.html")
-        pio.write_html(fig, html_file_path, full_html=True)
-        print("HTML successfully saved at:", html_file_path)
+        file_path = os.path.join("static", "pitch_result.html")
+        pio.write_html(fig, file_path, full_html=True)
 
-        # ----  Save a static PNG in Diagonal View for mobile preview  ----
-        fig.update_layout(scene_camera=camera_views["Diagonal View"])
-        png_file_path = os.path.join("static", "pitch_result.png")
-
-        try:
-            print("Attempting to save PNG for preview at:", png_file_path)
-            pio.write_image(fig, png_file_path, format="png", scale=2)
-            print("PNG successfully saved at:", png_file_path)
-        except Exception as e:
-            print("PNG export failed:", e)
-            png_file_path = None
-
-        return (
-            html_file_path,                                   # e.g. static/pitch_result.html
-            "static/pitch_result.png" if png_file_path else None,  # frontend expects full static path!
-            {"y": round(fy, 2), "z": round(fz, 2)}
-        )
+        return file_path, {"y": round(fy, 2), "z": round(fz, 2)}
 
     except Exception as e:
-        print("Simulation error:", e)
-        return None, None, {"error": str(e)}
+        return None, {"error": str(e)}
